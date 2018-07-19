@@ -1,10 +1,10 @@
 ﻿{
   "version": "1.0.0",
   "restore": {
-    "projectUniqueName": "/media/mookie/Work/vendor-backend/vendor-backend/WebApplication.csproj",
-    "projectName": "WebApplication",
-    "projectPath": "/media/mookie/Work/vendor-backend/vendor-backend/WebApplication.csproj",
-    "outputPath": "/media/mookie/Work/vendor-backend/vendor-backend/obj/",
+    "projectUniqueName": "/media/mookie/Work/vendor-backend/vendor-backend/vendor-backend/vendor-backend.csproj",
+    "projectName": "vendor-backend",
+    "projectPath": "/media/mookie/Work/vendor-backend/vendor-backend/vendor-backend/vendor-backend.csproj",
+    "outputPath": "/media/mookie/Work/vendor-backend/vendor-backend/vendor-backend/obj/",
     "projectStyle": "PackageReference",
     "fallbackFolders": [
       "/usr/share/dotnet/sdk/NuGetFallbackFolder"
@@ -14,7 +14,11 @@
     ],
     "frameworks": {
       "netcoreapp2.0": {
-        "projectReferences": {}
+        "projectReferences": {
+          "/media/mookie/Work/vendor-backend/vendor-backend/Infrastructure/Infrastructure.csproj": {
+            "projectPath": "/media/mookie/Work/vendor-backend/vendor-backend/Infrastructure/Infrastructure.csproj"
+          }
+        }
       }
     },
     "warningProperties": {
