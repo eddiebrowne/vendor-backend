@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
 using Newtonsoft.Json;
+using vendor_backend;
 using WebApplication;
 using Xunit;
 
@@ -10,23 +11,32 @@ namespace EndpointTests
 {
   public class ProductTests
   {
-    private readonly HttpClient _testClient = new HttpClient()
+    private const string Path = @"api/products";
+
+    private static HttpClient TestClient
     {
-      BaseAddress = new Uri(@"http://localhost:5000")
-    };
+      get
+      {
+        var builder = new WebHostBuilder().UseStartup<Startup>();
+        var server = new TestServer(builder)
+        {
+          BaseAddress = new Uri("http://localhost:5000")
+        };
+        return server.CreateClient();
+      }
+    }
 
     [Fact]
-    public void Should_Add_Product()
+    public async void Should_Add_Product()
     {
       // Arrange
       const string expected = "OK";
-      var endpoint = @"api/products";
       var product = new Product();
 
-      var content = new StringContent(JsonConvert.SerializeObject(product));
+      var content = JsonContent.Create(JsonConvert.SerializeObject(product));
       
       // Act
-      var actual = _testClient.PostAsync(endpoint, content).Result.Content.ToString();
+      var actual = await (await TestClient.PostAsync(Path, content)).Content.ReadAsStringAsync();
       
       // Assert
       Assert.Equal(expected, actual);
