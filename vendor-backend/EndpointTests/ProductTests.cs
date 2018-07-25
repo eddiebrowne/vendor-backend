@@ -1,7 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Data.SQLite;
+using System.IO;
 using System.Net.Http;
+using System.Threading.Tasks;
+using Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 using vendor_backend;
 using WebApplication;
@@ -13,26 +19,19 @@ namespace EndpointTests
   {
     private const string Path = @"api/products";
 
-    private static HttpClient TestClient
-    {
-      get
-      {
-        var builder = new WebHostBuilder().UseStartup<Startup>();
-        var server = new TestServer(builder)
-        {
-          BaseAddress = new Uri("http://localhost:5000")
-        };
-        return server.CreateClient();
-      }
-    }
-
     [Fact]
-    public async void Should_Add_Product()
+    public async Task Should_Add_Product()
     {
       // Arrange
-      const string expected = "OK";
-      var product = new Product();
-
+      var expected = $"{Path}/1";
+      var product = new Product
+      {
+        Name = "test",
+        Price = new decimal(10.50),
+        Quantity = 3,
+        UnitType = UnitType.Each
+      };
+      
       var content = JsonContent.Create(JsonConvert.SerializeObject(product));
       
       // Act
@@ -43,15 +42,32 @@ namespace EndpointTests
     }
 
     [Fact]
-    public void Should_Remove_Product()
+    public async void Should_Remove_Product()
     {
+      // Arrange
+      const string expected = "Deleted";
+      await Should_Add_Product();
       
+      // Act
+      var actual = await (await TestClient.DeleteAsync($@"{Path}\1")).Content.ReadAsStringAsync();
+      
+      // Assert
+      Assert.Equal(expected, actual);
     }
 
     [Fact]
-    public void Should_Get_Product_List()
+    public async void Should_Get_Product_List()
     {
+      // Arrange
+      await Should_Add_Product();
+      await Should_Add_Product();
       
+      // Act
+      var result = await (await TestClient.GetAsync($@"{Path}")).Content.ReadAsStringAsync();
+      var actual = JsonConvert.DeserializeObject<List<Product>>(result);
+      
+      // Assert
+      Assert.True(actual.Count >= 2);
     }
   }
 }

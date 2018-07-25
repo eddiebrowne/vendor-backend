@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace WebApplication.Controllers
 {
@@ -11,18 +12,23 @@ namespace WebApplication.Controllers
   public class ProductsController : Controller
   {
     private static string Path => "api/products";
-    private readonly ProductService _service = new ProductService();
+    private readonly IProductService _service;
+
+    public ProductsController(IProductService service)
+    {
+      _service = service;
+    }
 
     [HttpGet]
-    public IEnumerable<string> Get()
+    public IEnumerable<Product> Get()
     {
-      return new string[] {"value1", "value2"};
+      return _service.GetProducts();
     }
 
     [HttpGet("{id}")]
     public string Get(int id)
     {
-      return "value";
+      return JsonConvert.SerializeObject(_service.GetProduct(id));
     }
 
     [HttpPost]
@@ -31,10 +37,10 @@ namespace WebApplication.Controllers
       return $"{Path}/{_service.Create(product)}";
     }
 
-
     [HttpDelete("{id}")]
-    public void Delete(int id)
+    public string Delete(int id)
     {
+      return _service.DeleteProduct(id) > 0 ? "Deleted" : "Error";
     }
   }
 }

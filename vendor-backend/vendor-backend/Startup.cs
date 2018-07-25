@@ -21,6 +21,8 @@ namespace vendor_backend
     public void ConfigureServices(IServiceCollection services)
     {
       services.AddMvc();
+      services.AddTransient<IDatabase, Database>();
+      services.AddTransient<IProductService, ProductService>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
