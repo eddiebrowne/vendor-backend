@@ -9,7 +9,7 @@ using Xunit;
 
 namespace EndpointTests
 {
-  public class ProductTests
+  public class ProductTests : TestBase
   {
     private const string Path = @"api/products";
 

@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -27,9 +28,11 @@ namespace vendor_backend
     {
       var builder = new ConfigurationBuilder()
         .SetBasePath(Directory.GetCurrentDirectory())
-        .AddJsonFile("appsettings.json");
+        .AddJsonFile("appsettings.json", optional: true);
+      
       var config = builder.Build();
-
+      config.GetSection("db").Get<Config>();
+      
       if (env.IsDevelopment())
       {
         app.UseDeveloperExceptionPage();
