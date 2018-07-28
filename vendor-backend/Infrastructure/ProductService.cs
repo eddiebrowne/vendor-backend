@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using WebApplication;
+using Domain;
 
 namespace Infrastructure
 {
@@ -12,12 +12,12 @@ namespace Infrastructure
       _database = database;
     }
     
-    public int Create(Product product)
+    public int Create(IProduct product)
     {
       return _database.AddProduct(product);
     }
 
-    public Product GetProduct(int id)
+    public IProduct GetProduct(int id)
     {
       return _database.GetProduct(id);
     }
@@ -27,7 +27,7 @@ namespace Infrastructure
       return _database.RemoveProduct(id);
     }
 
-    public IEnumerable<Product> GetProducts()
+    public IEnumerable<IProduct> GetProducts()
     {
       return _database.GetProducts();
     }

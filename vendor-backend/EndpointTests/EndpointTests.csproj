@@ -13,7 +13,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+    <ProjectReference Include="..\Domain\Domain.csproj" />
     <ProjectReference Include="..\vendor-backend\vendor-backend.csproj">
       <Project>{7B73AE23-0CED-47ED-A8C0-40325943FF82}</Project>
       <Name>vendor-backend</Name>

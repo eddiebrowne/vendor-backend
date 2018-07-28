@@ -1,4 +1,4 @@
-﻿namespace WebApplication
+﻿namespace Domain
 {
   public enum UnitType : byte
   {

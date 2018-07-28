@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data;
+using Domain;
 using Microsoft.Data.Sqlite;
-using WebApplication;
 
 namespace Infrastructure
 {
@@ -9,7 +9,7 @@ namespace Infrastructure
   {
     private static SqliteConnection _connection;
 
-    public int AddProduct(Product product)
+    public int AddProduct(IProduct product)
     {
       using (_connection = new SqliteConnection(Config.ConnectionString))
       {
@@ -28,7 +28,7 @@ namespace Infrastructure
       }
     }
 
-    public Product GetProduct(int id)
+    public IProduct GetProduct(int id)
     {
       using (_connection = new SqliteConnection(Config.ConnectionString))
       {
@@ -68,7 +68,7 @@ namespace Infrastructure
       }
     }
 
-    public IEnumerable<Product> GetProducts()
+    public IEnumerable<IProduct> GetProducts()
     {
       using (_connection = new SqliteConnection(Config.ConnectionString))
       {

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Domain;
 
 namespace WebApplication.Controllers
 {
@@ -20,7 +21,7 @@ namespace WebApplication.Controllers
     }
 
     [HttpGet]
-    public IEnumerable<Product> Get()
+    public IEnumerable<IProduct> Get()
     {
       return _service.GetProducts();
     }

@@ -1,6 +1,8 @@
-﻿namespace WebApplication
+﻿using Domain;
+
+namespace Infrastructure
 {
-  public class Product
+  public class Product : IProduct
   {
     public string Name { get; set; }
     public int Quantity { get; set; }

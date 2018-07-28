@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using vendor_backend;
 using WebApplication;
 using Xunit;
+using Domain;
 
 namespace EndpointTests
 {

@@ -1,0 +1,9 @@
+CREATE TABLE tAccount 
+(
+  ID INTEGER PRIMARY KEY AUTOINCREMENT,
+  Name TEXT,
+  Email TEXT,
+  PasswordHash TEXT,
+  Salt TEXT,
+  Active BOOLEAN NOT NULL CHECK (Active IN (0,1))  
+)
