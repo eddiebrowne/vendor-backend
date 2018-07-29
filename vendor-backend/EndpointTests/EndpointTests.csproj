@@ -24,4 +24,9 @@
       <HintPath>..\..\..\..\..\..\home\mookie\.nuget\packages\microsoft.aspnetcore.hosting\1.0.0\lib\netstandard1.3\Microsoft.AspNetCore.Hosting.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\vendor-backend\appsettings.json">
+      <Link>appsettings.json</Link>
+    </Content>
+  </ItemGroup>
 </Project>

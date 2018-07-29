@@ -1,7 +1,11 @@
-﻿namespace Infrastructure
+﻿using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
+
+namespace Infrastructure
 {
-  public class Config
+  public class Config 
   {
-    public static string ConnectionString { get; set; }
+    public string ConnectionString { get; set; }
   }
 }

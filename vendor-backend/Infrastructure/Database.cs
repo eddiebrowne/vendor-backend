@@ -2,18 +2,34 @@
 using System.Data;
 using Domain;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure
 {
   public class Database : IDatabase
   {
-    private static SqliteConnection _connection;
+    private static string _connectionString;
+
+    public Database(Config config)
+    {
+      _connectionString = config.ConnectionString;
+    }
+
+    private static SqliteConnection Connection
+    {
+      get
+      {
+        var connection = new SqliteConnection(_connectionString);
+        connection.Open();
+        return connection;
+      }
+    }
 
     public int AddProduct(IProduct product)
     {
-      using (_connection = new SqliteConnection(Config.ConnectionString))
+      using (Connection)
       {
-        var command = _connection.CreateCommand();
+        var command = Connection.CreateCommand();
         command.CommandText =
           "INSERT INTO tProduct(Name, Quantity, Price, UnitID) VALUES(@Name, @Quantity, @Price, @UnitID)";
         command.Parameters.Add(new SqliteParameter("Name", SqliteType.Text) {Value = product.Name});
@@ -21,23 +37,20 @@ namespace Infrastructure
         command.Parameters.Add(new SqliteParameter("Price", SqliteType.Real) {Value = product.Price});
         command.Parameters.Add(new SqliteParameter("UnitID", SqliteType.Integer) {Value = product.UnitType});
 
-        _connection.Open();
         var result = command.ExecuteNonQuery();
-        _connection.Close();
         return result;
       }
     }
 
     public IProduct GetProduct(int id)
     {
-      using (_connection = new SqliteConnection(Config.ConnectionString))
+      using (Connection)
       {
-        var command = _connection.CreateCommand();
+        var command = Connection.CreateCommand();
         command.CommandText = $"SELECT * FROM tPRoduct WHERE ID = @ID";
         command.Parameters.Add(new SqliteParameter("ID", SqliteType.Integer) {Value = id});
 
         Product product = null;
-        _connection.Open();
         using (var reader = command.ExecuteReader())
         {
           product = new Product()
@@ -48,36 +61,33 @@ namespace Infrastructure
             UnitType = (UnitType) byte.Parse(reader["UnitID"].ToString())
           };
         }
-        _connection.Close();
+
         return product;
       }
     }
 
     public int RemoveProduct(int id)
     {
-      using (_connection = new SqliteConnection(Config.ConnectionString))
+      using (Connection)
       {
-        var command = _connection.CreateCommand();
+        var command = Connection.CreateCommand();
         command.CommandText = $"DELETE FROM tProduct WHERE ID = @ID";
         command.Parameters.Add(new SqliteParameter("ID", SqliteType.Integer) {Value = id});
 
-        _connection.Open();
         var result = command.ExecuteNonQuery();
-        _connection.Close();
         return result;
       }
     }
 
     public IEnumerable<IProduct> GetProducts()
     {
-      using (_connection = new SqliteConnection(Config.ConnectionString))
+      using (Connection)
       {
-        var command = _connection.CreateCommand();
+        var command = Connection.CreateCommand();
         command.CommandText = "SELECT * FROM tProduct";
         command.CommandType = CommandType.Text;
 
         var list = new List<Product>();
-        _connection.Open();
         using (var reader = command.ExecuteReader())
         {
           while (reader.Read())
@@ -92,22 +102,21 @@ namespace Infrastructure
             list.Add(product);
           }
         }
-        _connection.Close();
+
         return list;
       }
     }
 
-    public static void RunScript(string script)
+    public static void RunScript(string script, string connectionString)
     {
-      using(_connection = new SqliteConnection(Config.ConnectionString))
+      using (var connection = new SqliteConnection(connectionString))
       {
-        _connection.Open();
-        using (var command = _connection.CreateCommand())
+        using (var command = connection.CreateCommand())
         {
           command.CommandText = script;
+          connection.Open();
           command.ExecuteNonQuery();
         }
-        _connection.Close();
       }
     }
   }

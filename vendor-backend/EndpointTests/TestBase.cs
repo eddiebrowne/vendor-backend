@@ -11,11 +11,8 @@ namespace EndpointTests
 {
   public class TestBase
   {
-    private readonly string _databaseFileName = $"DB-{DateTime.Now.ToLongDateString()}.sqlite";
-
     protected TestBase()
     {
-      InitializeDatabase();
     }
 
     protected static HttpClient TestClient
@@ -29,14 +26,6 @@ namespace EndpointTests
         };
         return server.CreateClient();
       }
-    }
-
-    private void InitializeDatabase()
-    {
-      SQLiteConnection.CreateFile(_databaseFileName);
-      Config.ConnectionString = $"Data Source={_databaseFileName}";
-      var script = File.ReadAllText("../../../../vendor-backend/database.sql");
-      Database.RunScript(script);
     }
   }
 }
