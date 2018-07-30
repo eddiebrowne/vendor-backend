@@ -4,11 +4,11 @@ namespace Domain
 {
   public class AccountService : IAccountService
   {
-    private readonly IDatabase _database;
+    private readonly IAccountRepository _repository;
     
-    public AccountService(IDatabase database)
+    public AccountService(IAccountRepository repository)
     {
-      _database = database;
+      _repository = repository;
     }
     
     public int Create(IAccount account)
@@ -17,6 +17,11 @@ namespace Domain
       
       return 0;
       
+    }
+
+    public IAccount GetVendorAccount(string email, string password)
+    {
+      return _repository.GetAccount(email, password);
     }
 
     public static IAccount GetVendorFromToken(string token)

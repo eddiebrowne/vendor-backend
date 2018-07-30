@@ -5,31 +5,31 @@ namespace Infrastructure
 {
   public class ProductService : IProductService
   {
-    private readonly IDatabase _database;
+    private readonly IProductRepository _productRepository;
 
-    public ProductService(IDatabase database)
+    public ProductService(IProductRepository productRepository)
     {
-      _database = database;
+      _productRepository = productRepository;
     }
     
     public int Create(IProduct product)
     {
-      return _database.AddProduct(product);
+      return _productRepository.AddProduct(product);
     }
 
     public IProduct GetProduct(int id)
     {
-      return _database.GetProduct(id);
+      return _productRepository.GetProduct(id);
     }
 
     public int DeleteProduct(int id)
     {
-      return _database.RemoveProduct(id);
+      return _productRepository.RemoveProduct(id);
     }
 
     public IEnumerable<IProduct> GetProducts()
     {
-      return _database.GetProducts();
+      return _productRepository.GetProducts();
     }
   }
 }

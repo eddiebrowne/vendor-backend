@@ -6,40 +6,23 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure
 {
-  public class Database : IDatabase
+  public class ProductRepository : RepositoryBase, IProductRepository
   {
-    private static string _connectionString;
-
-    public Database(Config config)
+    public ProductRepository(DatabaseSettings settings) : base(settings)
     {
-      _connectionString = config.ConnectionString;
-    }
-
-    private static SqliteConnection Connection
-    {
-      get
-      {
-        var connection = new SqliteConnection(_connectionString);
-        connection.Open();
-        return connection;
-      }
+      
     }
 
     public int AddProduct(IProduct product)
     {
-      using (Connection)
-      {
-        var command = Connection.CreateCommand();
-        command.CommandText =
-          "INSERT INTO tProduct(Name, Quantity, Price, UnitID) VALUES(@Name, @Quantity, @Price, @UnitID)";
-        command.Parameters.Add(new SqliteParameter("Name", SqliteType.Text) {Value = product.Name});
-        command.Parameters.Add(new SqliteParameter("Quantity", SqliteType.Integer) {Value = product.Quantity});
-        command.Parameters.Add(new SqliteParameter("Price", SqliteType.Real) {Value = product.Price});
-        command.Parameters.Add(new SqliteParameter("UnitID", SqliteType.Integer) {Value = product.UnitType});
-
-        var result = command.ExecuteNonQuery();
-        return result;
-      }
+      var command = Connection.CreateCommand();
+      command.CommandText =
+        "INSERT INTO tProduct(Name, Quantity, Price, UnitID) VALUES(@Name, @Quantity, @Price, @UnitID)";
+      command.Parameters.Add(new SqliteParameter("Name", SqliteType.Text) {Value = product.Name});
+      command.Parameters.Add(new SqliteParameter("Quantity", SqliteType.Integer) {Value = product.Quantity});
+      command.Parameters.Add(new SqliteParameter("Price", SqliteType.Real) {Value = product.Price});
+      command.Parameters.Add(new SqliteParameter("UnitID", SqliteType.Integer) {Value = product.UnitType});
+      return ExecuteNonQueryCommand(command);
     }
 
     public IProduct GetProduct(int id)
@@ -51,7 +34,7 @@ namespace Infrastructure
         command.Parameters.Add(new SqliteParameter("ID", SqliteType.Integer) {Value = id});
 
         Product product = null;
-        using (var reader = command.ExecuteReader())
+        using (var reader = ExecuteReaderCommand(command))
         {
           product = new Product()
           {
@@ -68,15 +51,10 @@ namespace Infrastructure
 
     public int RemoveProduct(int id)
     {
-      using (Connection)
-      {
-        var command = Connection.CreateCommand();
-        command.CommandText = $"DELETE FROM tProduct WHERE ID = @ID";
-        command.Parameters.Add(new SqliteParameter("ID", SqliteType.Integer) {Value = id});
-
-        var result = command.ExecuteNonQuery();
-        return result;
-      }
+      var command = Connection.CreateCommand();
+      command.CommandText = $"DELETE FROM tProduct WHERE ID = @ID";
+      command.Parameters.Add(new SqliteParameter("ID", SqliteType.Integer) {Value = id});
+      return ExecuteNonQueryCommand(command);
     }
 
     public IEnumerable<IProduct> GetProducts()

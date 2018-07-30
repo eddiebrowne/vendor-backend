@@ -1,28 +1,44 @@
 ﻿using System;
 using System.Data.SQLite;
 using System.IO;
+using System.Text;
 using Domain;
 using Infrastructure;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Binder;
 using Microsoft.Extensions.DependencyInjection;
-using IDatabase = Domain.IDatabase;
+using Microsoft.IdentityModel.Tokens;
 
 namespace vendor_backend
 {
   public class Startup
   {
-    public Config Configuration { get; private set; }
+    private TokenConfiguration TokenConfiguration { get; set; }
+    private DatabaseSettings DatabaseSettings { get; set; }
 
     // This method gets called by the runtime. Use this method to add services to the container.
     // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
     public void ConfigureServices(IServiceCollection services)
     {
+      services.AddAuthentication().AddJwtBearer(options =>
+      {
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters()
+        {
+          ValidIssuer = TokenConfiguration.Issuer,
+          ValidAudience = TokenConfiguration.Issuer,
+          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TokenConfiguration.Key))
+        };
+      });
       services.AddMvc();
-      services.AddSingleton(_ => Configuration);
-      services.AddTransient<IDatabase, Database>();
+      services.AddSingleton(_ => TokenConfiguration);
+      services.AddSingleton(_ => DatabaseSettings);
+      services.AddTransient<IProductRepository, ProductRepository>();
+      services.AddTransient<IAccountRepository, AccountRepository>();
       services.AddTransient<IProductService, ProductService>();
     }
 
@@ -34,30 +50,32 @@ namespace vendor_backend
         .AddJsonFile("appsettings.json", optional: true);
 
       var config = builder.Build();
-
-
+      TokenConfiguration = config.GetSection("token").Get<TokenConfiguration>();
+  
       if (env.IsDevelopment())
       {
         app.UseDeveloperExceptionPage();
         builder.AddUserSecrets<Startup>();
       }
 
+      app.UseAuthentication();
+      
       app.Use((context, next) =>
       {
         if (context.Request.GetUri().AbsoluteUri.Contains("localhost"))
         {
-          if (Configuration == null)
+          if (DatabaseSettings == null)
           {
-            var connectionString = config["db-main.test:ConnectionString"];
-            Configuration = new Config() {ConnectionString = connectionString};
+            DatabaseSettings = new DatabaseSettings();
+            config.GetSection("db:test").Bind(DatabaseSettings);
           }
 
-          var testDb = $"{Configuration.ConnectionString.Split("=")[1]}.sql";
+          var testDb = $"{DatabaseSettings.ConnectionString.Split("=")[1]}.sql";
           if (!File.Exists(testDb))
           {
             SQLiteConnection.CreateFile(testDb);
             var script = File.ReadAllText("../../../../vendor-backend/database-vendor.sql");
-            Database.RunScript(script, Configuration.ConnectionString);
+            ProductRepository.RunScript(script, DatabaseSettings.ConnectionString);
           }
         }
 
@@ -84,7 +102,7 @@ namespace vendor_backend
 
           var vendor = AccountService.GetVendorFromToken(token);
 
-          Configuration.ConnectionString = string.Format(config.GetSection("db-vendor").ToString(), vendor.Name);
+          DatabaseSettings.ConnectionString = string.Format(config.GetSection("db-vendor").ToString(), vendor.Name);
         }
 
         return next();

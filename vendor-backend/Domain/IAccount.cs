@@ -1,9 +1,7 @@
 ﻿namespace Domain
 {
-  public interface IAccount
+  public interface IAccount : ILogin
   {
     string Name { get; set; }
-    string Password { get; set; }
-    string Email { get; set; }
   }
 }

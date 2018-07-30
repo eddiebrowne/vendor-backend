@@ -2,7 +2,7 @@
 
 namespace Domain
 {
-  public interface IDatabase
+  public interface IProductRepository
   {
     int AddProduct(IProduct product);
     IProduct GetProduct(int id);
