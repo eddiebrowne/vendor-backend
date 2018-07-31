@@ -17,7 +17,7 @@ namespace vendor_backend
 {
   public class Startup
   {
-    private TokenConfiguration TokenConfiguration { get; set; }
+    private TokenSettings TokenSettings { get; set; }
     private DatabaseSettings DatabaseSettings { get; set; }
 
     // This method gets called by the runtime. Use this method to add services to the container.
@@ -29,17 +29,18 @@ namespace vendor_backend
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters()
         {
-          ValidIssuer = TokenConfiguration.Issuer,
-          ValidAudience = TokenConfiguration.Issuer,
-          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TokenConfiguration.Key))
+          ValidIssuer = TokenSettings.Issuer,
+          ValidAudience = TokenSettings.Issuer,
+          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TokenSettings.Key))
         };
       });
       services.AddMvc();
-      services.AddSingleton(_ => TokenConfiguration);
+      services.AddSingleton(_ => TokenSettings);
       services.AddSingleton(_ => DatabaseSettings);
       services.AddTransient<IProductRepository, ProductRepository>();
       services.AddTransient<IAccountRepository, AccountRepository>();
       services.AddTransient<IProductService, ProductService>();
+      services.AddTransient<IAccountService, AccountService>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,8 +51,9 @@ namespace vendor_backend
         .AddJsonFile("appsettings.json", optional: true);
 
       var config = builder.Build();
-      TokenConfiguration = config.GetSection("token").Get<TokenConfiguration>();
-  
+      TokenSettings = config.GetSection("token").Get<TokenSettings>();
+      TokenSettings.SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(TokenSettings.Key)), SecurityAlgorithms.Aes256Encryption);
+      
       if (env.IsDevelopment())
       {
         app.UseDeveloperExceptionPage();
@@ -100,7 +102,8 @@ namespace vendor_backend
             token = authorization.Substring("Bearer ".Length).Trim();
           }
 
-          var vendor = AccountService.GetVendorFromToken(token);
+          var service = (IAccountService) app.ApplicationServices.GetService(typeof(IAccountService));
+          var vendor = service.GetVendorFromToken(token);
 
           DatabaseSettings.ConnectionString = string.Format(config.GetSection("db-vendor").ToString(), vendor.Name);
         }

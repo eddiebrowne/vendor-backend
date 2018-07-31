@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Text;
@@ -25,17 +26,34 @@ namespace Infrastructure
         command.Parameters.Add(new SqliteParameter("Email", email));
         command.Parameters.Add(new SqliteParameter("PasswordHash", GetHash(password, salt)));
 
-        using (var reader = ExecuteReaderCommand(command))
-        {
-          account = new Account()
-          {
-            Name = reader["Name"].ToString(),
-            Email = email
-          };
-        }
+        account = ParseAccount(ExecuteReaderCommand(command));
       }
 
       return account;
+    }
+
+    private IAccount ParseAccount(IDataReader reader)
+    {
+      IAccount account;
+      using (reader)
+      {
+        account = new Account()
+        {
+          Name = reader["Name"].ToString(),
+          Email = reader["Email"].ToString()
+        };
+      }
+
+      return account;
+    }
+
+    public IAccount GetAccountFromToken(string token)
+    {
+      var command = Connection.CreateCommand();
+      command.CommandText = "SELECT Name, Email FROM tAccount WHERE Token = @0";
+      command.Parameters.Add(new SqliteParameter("Token", token));
+
+      return ParseAccount(ExecuteReaderCommand(command));
     }
 
     private string GetHash(string password, string salt)

@@ -1,14 +1,21 @@
-﻿using Microsoft.Extensions.Primitives;
+﻿using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Infrastructure;
+using Microsoft.Extensions.Primitives;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Domain
 {
   public class AccountService : IAccountService
   {
     private readonly IAccountRepository _repository;
-    
-    public AccountService(IAccountRepository repository)
+    private readonly TokenSettings _tokenSettings;
+
+    public AccountService(IAccountRepository repository, TokenSettings tokenSettings)
     {
       _repository = repository;
+      _tokenSettings = tokenSettings;
     }
     
     public int Create(IAccount account)
@@ -24,9 +31,19 @@ namespace Domain
       return _repository.GetAccount(email, password);
     }
 
-    public static IAccount GetVendorFromToken(string token)
+    public IAccount GetVendorFromToken(string token)
     {
-      return null;
+      return _repository.GetAccountFromToken(token);
+    }
+
+    public string CreateToken(IAccount account)
+    {
+      var jwtPayload = new JwtPayload()
+      {
+        { "email", account.Email }
+      };
+      var jwt = new JwtSecurityToken(new JwtHeader(_tokenSettings.SigningCredentials), jwtPayload);
+      return new JwtSecurityTokenHandler().WriteToken(jwt);
     }
   }
 }

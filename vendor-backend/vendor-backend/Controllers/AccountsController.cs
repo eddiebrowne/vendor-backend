@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Net;
+using System.Net.Http;
+using Microsoft.AspNetCore.Mvc;
 using Domain;
 using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace WebApplication.Controllers
 {
@@ -23,13 +26,18 @@ namespace WebApplication.Controllers
       return $@"api/accounts/{id}";
     }
 
-    [HttpPost]
+    [HttpPost("login")]
     [AllowAnonymous]
     public IActionResult Login([FromBody] Login login)
     {
       var account = _service.GetVendorAccount(login.Email, login.Password);
-            
-      return null;
+
+      if (account == null)
+      {
+        return Unauthorized();
+      }
+
+      return new JsonResult(_service.CreateToken(account));
     }
   }
 }
