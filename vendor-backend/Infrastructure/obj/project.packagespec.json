@@ -10,11 +10,15 @@
       "/usr/share/dotnet/sdk/NuGetFallbackFolder"
     ],
     "originalTargetFrameworks": [
-      "netcoreapp2.0"
+      "netcoreapp2.1"
     ],
     "frameworks": {
-      "netcoreapp2.0": {
-        "projectReferences": {}
+      "netcoreapp2.1": {
+        "projectReferences": {
+          "/media/mookie/Work/vendor-backend/vendor-backend/Domain/Domain.csproj": {
+            "projectPath": "/media/mookie/Work/vendor-backend/vendor-backend/Domain/Domain.csproj"
+          }
+        }
       }
     },
     "warningProperties": {
@@ -24,12 +28,16 @@
     }
   },
   "frameworks": {
-    "netcoreapp2.0": {
+    "netcoreapp2.1": {
       "dependencies": {
+        "Microsoft.AspNetCore.All": {
+          "target": "Package",
+          "version": "[2.1.2, )"
+        },
         "Microsoft.NETCore.App": {
           "suppressParent": "All",
           "target": "Package",
-          "version": "[2.0.0, )",
+          "version": "[2.1.0, )",
           "autoReferenced": true
         }
       },
