@@ -84,18 +84,5 @@ namespace Infrastructure
         return list;
       }
     }
-
-    public static void RunScript(string script, string connectionString)
-    {
-      using (var connection = new SqliteConnection(connectionString))
-      {
-        using (var command = connection.CreateCommand())
-        {
-          command.CommandText = script;
-          connection.Open();
-          command.ExecuteNonQuery();
-        }
-      }
-    }
   }
 }

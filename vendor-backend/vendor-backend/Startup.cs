@@ -69,15 +69,16 @@ namespace vendor_backend
           if (DatabaseSettings == null)
           {
             DatabaseSettings = new DatabaseSettings();
-            config.GetSection("db:test").Bind(DatabaseSettings);
+            var thing = config.GetSection("db:test");
+            thing.Bind(DatabaseSettings);
           }
 
           var testDb = $"{DatabaseSettings.ConnectionString.Split("=")[1]}.sql";
           if (!File.Exists(testDb))
           {
             SQLiteConnection.CreateFile(testDb);
-            var script = File.ReadAllText("../../../../vendor-backend/database-vendor.sql");
-            ProductRepository.RunScript(script, DatabaseSettings.ConnectionString);
+            var script = File.ReadAllText(DatabaseSettings.Scripts.Main);
+            RepositoryBase.RunScript(script, DatabaseSettings.ConnectionString);
           }
         }
 

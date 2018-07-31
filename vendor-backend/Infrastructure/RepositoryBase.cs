@@ -4,18 +4,18 @@ namespace Infrastructure
 {
   public abstract class RepositoryBase
   {
-    private static string _connectionString;
+    protected static DatabaseSettings _databaseSettings;
 
     protected RepositoryBase(DatabaseSettings settings)
     {
-      _connectionString = settings.ConnectionString;
+      _databaseSettings = settings;
     }
     
     protected static SqliteConnection Connection
     {
       get
       {
-        var connection = new SqliteConnection(_connectionString);
+        var connection = new SqliteConnection(_databaseSettings.ConnectionString);
         connection.Open();
         return connection;
       }
@@ -42,6 +42,19 @@ namespace Infrastructure
       using (Connection)
       {
         return command.ExecuteReader();
+      }
+    }
+
+    public static void RunScript(string script, string connectionString)
+    {
+      using (var connection = new SqliteConnection(connectionString))
+      {
+        using (var command = connection.CreateCommand())
+        {
+          command.CommandText = script;
+          connection.Open();
+          command.ExecuteNonQuery();
+        }
       }
     }
   }

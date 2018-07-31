@@ -1,9 +1,12 @@
 CREATE TABLE tAccount 
 (
   ID INTEGER PRIMARY KEY AUTOINCREMENT,
-  Name TEXT,
-  Email TEXT,
-  PasswordHash TEXT,
-  Salt TEXT,
-  Active BOOLEAN NOT NULL CHECK (Active IN (0,1))  
+  Name TEXT NOT NULL,
+  Email TEXT NOT NULL,
+  PasswordHash TEXT NOT NULL,
+  Salt TEXT NOT NULL,
+  Token TEXT NULL,
+  Active BOOLEAN NOT NULL DEFAULT 1 CHECK (Active IN (0,1)),
+  CONSTRAINT UN_Email UNIQUE (Email),
+  CONSTRAINT UN_Name UNIQUE (Name)  
 )

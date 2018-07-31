@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Data;
+using System.Data.SQLite;
+using System.IO;
 using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Text;
@@ -50,10 +52,35 @@ namespace Infrastructure
     public IAccount GetAccountFromToken(string token)
     {
       var command = Connection.CreateCommand();
-      command.CommandText = "SELECT Name, Email FROM tAccount WHERE Token = @0";
+      command.CommandText = "SELECT Name, Email FROM tAccount WHERE Token = @Token";
       command.Parameters.Add(new SqliteParameter("Token", token));
 
       return ParseAccount(ExecuteReaderCommand(command));
+    }
+
+    public int Create(IAccount account)
+    {
+      byte[] salt;
+      new RNGCryptoServiceProvider().GetBytes(salt = new byte[16]);
+      var command = Connection.CreateCommand();
+      command.CommandText = "INSERT INTO tAccount (Name, Email, Salt, PasswordHash) VALUES (@Name, @Email, @Salt, @PasswordHash)";
+      command.Parameters.Add(new SqliteParameter("Name", account.Name));
+      command.Parameters.Add(new SqliteParameter("Email", account.Email));
+      command.Parameters.Add(new SqliteParameter("Salt", salt));
+      command.Parameters.Add(new SqliteParameter("PasswordHash", salt + account.Password));
+
+      return ExecuteNonQueryCommand(command);
+    }
+
+    public void CreateDatabase(string accountName)
+    {
+      var database = $"{accountName}.sql";
+      if (!File.Exists(database))
+      {
+        SQLiteConnection.CreateFile(database);
+        var script = File.ReadAllText(_databaseSettings.Scripts.Vendor);
+        RunScript(script, $"Data Source={accountName}");
+      }
     }
 
     private string GetHash(string password, string salt)

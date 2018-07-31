@@ -20,10 +20,13 @@ namespace Domain
     
     public int Create(IAccount account)
     {
-      
-      
-      return 0;
-      
+      var result = _repository.Create(account);
+      if (result > 0)
+      {
+        _repository.CreateDatabase(account.Name);
+      }
+
+      return result;
     }
 
     public IAccount GetVendorAccount(string email, string password)
