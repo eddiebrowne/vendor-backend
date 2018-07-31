@@ -18,7 +18,7 @@ namespace EndpointTests
 {
   public class ProductTests : TestBase
   {
-    private const string Path = @"api/products";
+    private new const string Path = @"api/products";
 
     [Fact]
     public async Task Should_Add_Product()
@@ -33,10 +33,8 @@ namespace EndpointTests
         UnitType = UnitType.Each
       };
       
-      var content = JsonContent.Create(JsonConvert.SerializeObject(product));
-      
       // Act
-      var actual = await (await TestClient.PostAsync(Path, content)).Content.ReadAsStringAsync();
+      var actual = await ParseResponse(await TestClient.SendAsync(await PostRequest(product)));
       
       // Assert
       Assert.Equal(expected, actual);
@@ -50,11 +48,13 @@ namespace EndpointTests
       await Should_Add_Product();
       
       // Act
-      var actual = await (await TestClient.DeleteAsync($@"{Path}\1")).Content.ReadAsStringAsync();
+      var actual = await ParseResponse(await TestClient.SendAsync(DeleteRequest()));
       
       // Assert
       Assert.Equal(expected, actual);
     }
+
+    
 
     [Fact]
     public async void Should_Get_Product_List()
@@ -64,11 +64,13 @@ namespace EndpointTests
       await Should_Add_Product();
       
       // Act
-      var result = await (await TestClient.GetAsync($@"{Path}")).Content.ReadAsStringAsync();
+      var result = await ParseResponse(await TestClient.SendAsync(GetRequest()));
       var actual = JsonConvert.DeserializeObject<List<Product>>(result);
       
       // Assert
       Assert.True(actual.Count >= 2);
     }
+
+    
   }
 }

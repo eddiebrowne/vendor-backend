@@ -57,5 +57,12 @@ namespace Infrastructure
         }
       }
     }
+
+    protected long GetId(string table)
+    {
+      var com = Connection.CreateCommand();
+      com.CommandText = $"select seq from sqlite_sequence where name='{table}'; ";
+      return (long) ExecuteScalarCommand(com);
+    }
   }
 }

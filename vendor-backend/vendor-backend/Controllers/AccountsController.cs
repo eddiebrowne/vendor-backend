@@ -2,6 +2,7 @@
 using System.Net.Http;
 using Microsoft.AspNetCore.Mvc;
 using Domain;
+using Domain.Services;
 using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

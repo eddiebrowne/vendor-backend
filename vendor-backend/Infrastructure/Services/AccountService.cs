@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Domain.Services;
 using Infrastructure;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
@@ -18,7 +19,7 @@ namespace Domain
       _tokenSettings = tokenSettings;
     }
     
-    public int Create(IAccount account)
+    public long Create(IAccount account)
     {
       var result = _repository.Create(account);
       if (result > 0)
@@ -41,12 +42,23 @@ namespace Domain
 
     public string CreateToken(IAccount account)
     {
-      var jwtPayload = new JwtPayload()
+      var handler = new JwtSecurityTokenHandler();
+      var now = DateTime.Now;
+      var tokenDescriptor = new SecurityTokenDescriptor
       {
-        { "email", account.Email }
+        Subject = new ClaimsIdentity(new[]
+        {
+          new Claim( ClaimTypes.UserData,
+            "IsValid", ClaimValueTypes.String, "(local)" )
+        }),
+        Issuer = _tokenSettings.Issuer,
+        Audience =_tokenSettings.Audience,
+        Expires = now.AddMinutes(_tokenSettings.Expiration),
+        SigningCredentials = _tokenSettings.SigningCredentials,
       };
-      var jwt = new JwtSecurityToken(new JwtHeader(_tokenSettings.SigningCredentials), jwtPayload);
-      return new JwtSecurityTokenHandler().WriteToken(jwt);
+
+      var token = handler.CreateToken(tokenDescriptor);
+      return handler.WriteToken(token);
     }
   }
 }

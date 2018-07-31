@@ -24,7 +24,7 @@ namespace Infrastructure
       if (!string.IsNullOrEmpty(salt))
       {
         var command = Connection.CreateCommand();
-        command.CommandText = "SELECT Name, Email FROM tAccount WHERE Email = @0 AND PasswordHash = @1";
+        command.CommandText = "SELECT Name, Email FROM tAccount WHERE Email = '@Email' AND PasswordHash = '@PasswordHash'";
         command.Parameters.Add(new SqliteParameter("Email", email));
         command.Parameters.Add(new SqliteParameter("PasswordHash", GetHash(password, salt)));
 
@@ -52,29 +52,31 @@ namespace Infrastructure
     public IAccount GetAccountFromToken(string token)
     {
       var command = Connection.CreateCommand();
-      command.CommandText = "SELECT Name, Email FROM tAccount WHERE Token = @Token";
+      command.CommandText = "SELECT Name, Email FROM tAccount WHERE Token = '@Token'";
       command.Parameters.Add(new SqliteParameter("Token", token));
 
       return ParseAccount(ExecuteReaderCommand(command));
     }
 
-    public int Create(IAccount account)
+    public long Create(IAccount account)
     {
-      byte[] salt;
-      new RNGCryptoServiceProvider().GetBytes(salt = new byte[16]);
+      byte[] saltBytes;
+      var provider = new RNGCryptoServiceProvider();
+      provider.GetBytes(saltBytes = new byte[16]);
+      var salt = Encoding.ASCII.GetString(saltBytes);
       var command = Connection.CreateCommand();
-      command.CommandText = "INSERT INTO tAccount (Name, Email, Salt, PasswordHash) VALUES (@Name, @Email, @Salt, @PasswordHash)";
+      command.CommandText = "INSERT INTO tAccount (Name, Email, Salt, PasswordHash) VALUES (@Name, @Email, @Salt, @PasswordHash); SELECT CAST(last_insert_rowid() AS int)";
       command.Parameters.Add(new SqliteParameter("Name", account.Name));
       command.Parameters.Add(new SqliteParameter("Email", account.Email));
       command.Parameters.Add(new SqliteParameter("Salt", salt));
-      command.Parameters.Add(new SqliteParameter("PasswordHash", salt + account.Password));
+      command.Parameters.Add(new SqliteParameter("PasswordHash", GetHash(account.Password, salt)));
 
-      return ExecuteNonQueryCommand(command);
+      return (long) ExecuteScalarCommand(command);
     }
 
     public void CreateDatabase(string accountName)
     {
-      var database = $"{accountName}.sql";
+      var database = $"{accountName}";
       if (!File.Exists(database))
       {
         SQLiteConnection.CreateFile(database);
@@ -92,10 +94,17 @@ namespace Infrastructure
     public string GetSalt(string email)
     {
       var command = Connection.CreateCommand();
-      command.CommandText = "SELECT Salt FROM tAccount WHERE Email = @0";
+      command.CommandText = "SELECT Salt FROM tAccount WHERE Email = '@Email'";
       command.Parameters.Add(new SqliteParameter("Email", email));
 
-      return (string) ExecuteScalarCommand(command);
+      byte[] result;
+      using (var reader = ExecuteReaderCommand(command))
+      {
+        var value = reader["Salt"];
+        result = (byte[]) (value == DBNull.Value ? 0 : value);
+      }
+      
+      return Encoding.Default.GetString(result);
     }
   }
 }
