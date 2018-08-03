@@ -38,7 +38,7 @@ namespace WebApplication.Controllers
         return Unauthorized();
       }
 
-      return new JsonResult(_service.CreateToken(account));
+      return Ok( new {token = _service.GenerateToken(account)});
     }
   }
 }

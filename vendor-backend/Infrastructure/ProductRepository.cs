@@ -17,12 +17,12 @@ namespace Infrastructure
     {
       var command = Connection.CreateCommand();
       command.CommandText =
-        "INSERT INTO tProduct(Name, Quantity, Price, UnitID) VALUES(@Name, @Quantity, @Price, @UnitID)";
+        "INSERT INTO tProduct(Name, Quantity, Price, UnitID) VALUES(@Name, @Quantity, @Price, @UnitID); SELECT ID FROM tProduct WHERE rowid = (SELECT last_insert_rowid());";
       command.Parameters.Add(new SqliteParameter("Name", SqliteType.Text) {Value = product.Name});
       command.Parameters.Add(new SqliteParameter("Quantity", SqliteType.Integer) {Value = product.Quantity});
       command.Parameters.Add(new SqliteParameter("Price", SqliteType.Real) {Value = product.Price});
       command.Parameters.Add(new SqliteParameter("UnitID", SqliteType.Integer) {Value = product.UnitType});
-      return ExecuteNonQueryCommand(command);
+      return (int) (long)ExecuteScalarCommand(command);
     }
 
     public IProduct GetProduct(int id)
@@ -30,7 +30,7 @@ namespace Infrastructure
       using (Connection)
       {
         var command = Connection.CreateCommand();
-        command.CommandText = $"SELECT * FROM tPRoduct WHERE ID = @ID";
+        command.CommandText = $"SELECT * FROM tProduct WHERE ID = @ID";
         command.Parameters.Add(new SqliteParameter("ID", SqliteType.Integer) {Value = id});
 
         Product product = null;
@@ -51,22 +51,22 @@ namespace Infrastructure
 
     public int RemoveProduct(int id)
     {
-      var command = Connection.CreateCommand();
-      command.CommandText = $"DELETE FROM tProduct WHERE ID = @ID";
-      command.Parameters.Add(new SqliteParameter("ID", SqliteType.Integer) {Value = id});
-      return ExecuteNonQueryCommand(command);
+      using (var command = Connection.CreateCommand())
+      {
+        command.CommandText = $"DELETE FROM tProduct WHERE ID = @ID";
+        command.Parameters.AddWithValue("ID", id);
+        return ExecuteNonQueryCommand(command);
+      }
     }
 
     public IEnumerable<IProduct> GetProducts()
     {
-      using (Connection)
+      using(var command = Connection.CreateCommand())
       {
-        var command = Connection.CreateCommand();
         command.CommandText = "SELECT * FROM tProduct";
-        command.CommandType = CommandType.Text;
 
         var list = new List<Product>();
-        using (var reader = command.ExecuteReader())
+        using (var reader = ExecuteReaderCommand(command))
         {
           while (reader.Read())
           {

@@ -4,7 +4,8 @@
   {
     IAccount GetAccount(string email, string password);
     IAccount GetAccountFromToken(string token);
-    long Create(IAccount account);
+    int Create(IAccount account);
     void CreateDatabase(string accountName);
+    void StoreToken(IAccount account, string token);
   }
 }

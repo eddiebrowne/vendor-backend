@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Domain;
 using Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -12,16 +13,30 @@ namespace EndpointTests
 {
   public abstract class TestBase
   {
-    protected string SecurityToken;
-    protected string Path;
-    protected Login Login = new Login
-    {
-      Email = $"fake{Stamp}@email.edu",
-      Password = "somepassword"
-    };
+    protected TokenResponse SecurityTokenResponse;
+    protected abstract string Path { get; }
 
-    protected static string Stamp => (DateTime.Now.ToFileTimeUtc().ToString());
-    
+    private string _stamp;
+    private string Stamp => _stamp ?? (_stamp = (DateTime.Now.ToFileTimeUtc().ToString()));
+
+    private IAccount Account { get; set; }
+
+    private Login _login;
+    private Login Login
+    {
+      get
+      {
+        if (_login != null) return _login;
+        _login = new Login
+        {
+          Email = $"fake{Stamp}@email.edu",
+          Password = "somepassword"
+        };
+
+        return _login;
+      }
+    }
+
     private StringContent PrepareContent(object data)
     {
       return JsonContent.Create(JsonConvert.SerializeObject(data));
@@ -29,20 +44,28 @@ namespace EndpointTests
 
     protected async Task LoginRequest()
     {
-      SecurityToken = await ParseResponse(await TestClient.PostAsync("api/accounts/login", PrepareContent(Login)));
+      SecurityTokenResponse =
+        JsonConvert.DeserializeObject<TokenResponse>(
+          await ParseResponse(await TestClient.PostAsync("api/accounts/login", PrepareContent(Login))));
     }
 
-    private async Task<HttpRequestMessage> Request(HttpMethod method, string path = null, object data = null)
+    private async Task<HttpRequestMessage> Request(
+      HttpMethod method, 
+      string path = null, 
+      object data = null,
+      bool secure = true)
     {
-      var request = new HttpRequestMessage(method, path ?? Path);
-      
-      if (string.IsNullOrEmpty(SecurityToken))
+      var request = new HttpRequestMessage(method, $"{TestClient.BaseAddress}{path}");
+
+      if (secure)
       {
-        await LoginRequest();
+        if(SecurityTokenResponse == null)
+        {
+          await LoginRequest();  
+        }
+        request.Headers.Add("Authorization", "bearer " + SecurityTokenResponse.Token);
       }
       
-      request.Headers.Add("Authorization", "bearer " + SecurityToken);
-
       if (data != null)
       {
         request.Content = PrepareContent(data);
@@ -55,22 +78,23 @@ namespace EndpointTests
     {
       return await response.Content.ReadAsStringAsync();
     }
-    
-    protected HttpRequestMessage GetRequest()
+
+    protected async Task<HttpRequestMessage> GetRequest(string path = null)
     {
-      return Request(HttpMethod.Get).Result;
+      return await Request(HttpMethod.Get, path);
     }
 
-    protected async Task<HttpRequestMessage> PostRequest(object data, string path = null)
+    protected async Task<HttpRequestMessage> PostRequest(object data, string path = null, bool secure = true)
     {
-      return await Request(HttpMethod.Post, path, data);
+      return await Request(HttpMethod.Post, path, data, secure);
     }
-    
-    protected HttpRequestMessage DeleteRequest()
+
+    protected async Task<HttpRequestMessage> DeleteRequest(int id)
     {
-      return Request(HttpMethod.Delete).Result;
+      var path = $"{Path}/{id}";
+      return await Request(HttpMethod.Delete, path: path);
     }
-    
+
     protected static HttpClient TestClient
     {
       get
@@ -83,7 +107,38 @@ namespace EndpointTests
         return server.CreateClient();
       }
     }
-    
-    
+
+    public async Task AddAccount()
+    {
+      await Should_Add_Account();
+    }
+  
+    [Fact]
+    private async Task Should_Add_Account()
+    {
+      // Arrange
+      if (Account == null)
+      {
+        Account = new Account
+        {
+          Name = $"test-{Stamp}",
+          Email = Login.Email,
+          Password = Login.Password
+        };
+      
+        var content = JsonContent.Create(JsonConvert.SerializeObject(Account));
+      
+        // Act
+        var actual = await (await TestClient.PostAsync("api/accounts", content)).Content.ReadAsStringAsync();
+      
+        // Assert
+        Assert.True(int.Parse(actual.Split("/")[2]) > 0);
+      }
+    }
+  }
+
+  public class TokenResponse
+  {
+    public string Token { get; set; }
   }
 }

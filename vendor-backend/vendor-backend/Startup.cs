@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Data.SQLite;
+using System.IdentityModel.Tokens.Jwt;
 using System.IO;
+using System.Net;
 using System.Text;
 using Domain;
 using Domain.Services;
@@ -25,13 +27,15 @@ namespace vendor_backend
     // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
     public void ConfigureServices(IServiceCollection services)
     {
-      services.AddAuthentication().AddJwtBearer(options =>
+      services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
       {
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters()
         {
           ValidIssuer = TokenSettings.Issuer,
           ValidAudience = TokenSettings.Issuer,
+          ValidateIssuer = true,
+          ValidateLifetime = true,
           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TokenSettings.Key))
         };
       });
@@ -53,8 +57,9 @@ namespace vendor_backend
 
       var config = builder.Build();
       TokenSettings = config.GetSection("token").Get<TokenSettings>();
-      TokenSettings.SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(TokenSettings.Key)), SecurityAlgorithms.HmacSha256Signature);
-      
+      TokenSettings.SigningCredentials = new SigningCredentials(
+        new SymmetricSecurityKey(Encoding.ASCII.GetBytes(TokenSettings.Key)), SecurityAlgorithms.HmacSha256Signature);
+
       if (env.IsDevelopment())
       {
         app.UseDeveloperExceptionPage();
@@ -62,7 +67,7 @@ namespace vendor_backend
       }
 
       app.UseAuthentication();
-      
+
       app.Use((context, next) =>
       {
         if (context.Request.GetUri().AbsoluteUri.Contains("localhost"))
@@ -70,8 +75,7 @@ namespace vendor_backend
           if (DatabaseSettings == null)
           {
             DatabaseSettings = new DatabaseSettings();
-            var thing = config.GetSection("db:test");
-            thing.Bind(DatabaseSettings);
+            config.GetSection("db:test").Bind(DatabaseSettings);
           }
 
           var testDb = $"{DatabaseSettings.ConnectionString.Split("=")[1]}";
@@ -88,26 +92,33 @@ namespace vendor_backend
 
       app.Use((context, next) =>
       {
-        var token = context.Request.Headers["token"];
+        string authorization = context.Request.Headers["Authorization"];
 
-        if (string.IsNullOrEmpty(token))
+        if (string.IsNullOrEmpty(authorization))
         {
-          string authorization = context.Request.Headers["Authorization"];
+          return next();
+        }
 
-          if (string.IsNullOrEmpty(authorization))
-          {
-            return next();
-          }
+        if (authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+          authorization = authorization.Substring("Bearer ".Length).Trim().Replace("\"", string.Empty);
+        }
+        
+        var handler = new JwtSecurityTokenHandler();
+        var token = handler.ReadJwtToken(authorization);
+        
+        if (token == null)
+        {
+          context.Response.StatusCode = (int) HttpStatusCode.Unauthorized;
+          return next();
+        }
 
-          if (authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-          {
-            token = authorization.Substring("Bearer ".Length).Trim();
-          }
-
-          var service = (IAccountService) app.ApplicationServices.GetService(typeof(IAccountService));
-          var vendor = service.GetVendorFromToken(token);
-
-          DatabaseSettings.ConnectionString = string.Format(config.GetSection("db-vendor").ToString(), vendor.Name);
+        var service = (IAccountService) app.ApplicationServices.GetService(typeof(IAccountService));
+        var vendor = service.GetVendorFromToken(token.Payload.Jti);
+        if (vendor != null)
+        {
+          var format = config.GetSection("db:db-vendor:ConnectionString").Value;
+          DatabaseSettings.ConnectionString = string.Format(format, vendor.Name);
         }
 
         return next();

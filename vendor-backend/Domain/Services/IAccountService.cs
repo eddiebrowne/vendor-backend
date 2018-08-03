@@ -5,6 +5,6 @@
     long Create(IAccount account);
     IAccount GetVendorAccount(string email, string password);
     IAccount GetVendorFromToken(string token);
-    string CreateToken(IAccount account);
+    string GenerateToken(IAccount account);
   }
 }

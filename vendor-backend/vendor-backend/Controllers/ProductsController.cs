@@ -24,16 +24,16 @@ namespace WebApplication.Controllers
 
     [HttpGet]
     [Authorize]
-    public IEnumerable<IProduct> Get()
+    public JsonResult Get()
     {
-      return _service.GetProducts();
+      return new JsonResult(_service.GetProducts());
     }
 
     [HttpGet("{id}")]
     [Authorize]
-    public string Get(int id)
+    public JsonResult Get(int id)
     {
-      return JsonConvert.SerializeObject(_service.GetProduct(id));
+      return new JsonResult(_service.GetProduct(id));
     }
 
     [HttpPost]

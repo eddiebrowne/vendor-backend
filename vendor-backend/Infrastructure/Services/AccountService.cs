@@ -40,7 +40,16 @@ namespace Domain
       return _repository.GetAccountFromToken(token);
     }
 
-    public string CreateToken(IAccount account)
+    public string GenerateToken(IAccount account)
+    {
+      var guid = Guid.NewGuid().ToString();
+      var token = CreateToken(guid);
+      _repository.StoreToken(account, guid);
+      
+      return token;
+    }
+
+    private string CreateToken(string guid)
     {
       var handler = new JwtSecurityTokenHandler();
       var now = DateTime.Now;
@@ -48,16 +57,15 @@ namespace Domain
       {
         Subject = new ClaimsIdentity(new[]
         {
-          new Claim( ClaimTypes.UserData,
-            "IsValid", ClaimValueTypes.String, "(local)" )
+          new Claim(JwtRegisteredClaimNames.Jti, guid)
         }),
         Issuer = _tokenSettings.Issuer,
-        Audience =_tokenSettings.Audience,
+        Audience = _tokenSettings.Audience,
         Expires = now.AddMinutes(_tokenSettings.Expiration),
-        SigningCredentials = _tokenSettings.SigningCredentials,
+        SigningCredentials = _tokenSettings.SigningCredentials
       };
 
-      var token = handler.CreateToken(tokenDescriptor);
+      var token = handler.CreateJwtSecurityToken(tokenDescriptor);
       return handler.WriteToken(token);
     }
   }

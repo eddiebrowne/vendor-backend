@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SQLite;
-using System.IO;
-using System.Net.Http;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using Infrastructure;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
-using vendor_backend;
-using WebApplication;
 using Xunit;
 using Domain;
 
@@ -18,13 +10,15 @@ namespace EndpointTests
 {
   public class ProductTests : TestBase
   {
-    private new const string Path = @"api/products";
+    protected override string Path => @"api/products";
+    private int _quantity = 0;
 
     [Fact]
     public async Task Should_Add_Product()
     {
       // Arrange
-      var expected = $"{Path}/1";
+      await AddAccount();
+      var expected = $"{Path}/{++_quantity}";
       var product = new Product
       {
         Name = "test",
@@ -34,28 +28,65 @@ namespace EndpointTests
       };
       
       // Act
-      var actual = await ParseResponse(await TestClient.SendAsync(await PostRequest(product)));
+      var request = await PostRequest(product, Path);
+      var response = await TestClient.SendAsync(request);
+      var actual = await ParseResponse(response);
       
       // Assert
       Assert.Equal(expected, actual);
+    }
+    
+    [Fact]
+    public async Task Should_Not_Add_Product_When_Not_Authorized()
+    {
+      // Arrange
+      const HttpStatusCode expected = HttpStatusCode.Unauthorized;
+      var product = new Product
+      {
+        Name = "never",
+        Price = new decimal(0.50),
+        Quantity = 1,
+        UnitType = UnitType.Box
+      };
+      
+      // Act
+      var request = await PostRequest(product, Path, secure: false);
+      var response = await TestClient.SendAsync(request);
+      var actual = await ParseResponse(response);
+      
+      // Assert
+      Assert.Equal(expected, response.StatusCode);
     }
 
     [Fact]
     public async void Should_Remove_Product()
     {
       // Arrange
-      const string expected = "Deleted";
       await Should_Add_Product();
       
+      const string expected = "Deleted";
+      
       // Act
-      var actual = await ParseResponse(await TestClient.SendAsync(DeleteRequest()));
+      var actual = await ParseResponse(await TestClient.SendAsync(await DeleteRequest(1)));
       
       // Assert
       Assert.Equal(expected, actual);
     }
 
+    [Fact]
+    public async void Should_Get_Product()
+    {
+      // Arrange
+      await Should_Add_Product();
+      
+      // Act
+      var result = await ParseResponse(await TestClient.SendAsync(await GetRequest($"{Path}/1")));
+      var actual = JsonConvert.DeserializeObject<Product>(result);
+      
+      // Assert
+      Assert.NotNull(actual);
+    }
     
-
     [Fact]
     public async void Should_Get_Product_List()
     {
@@ -64,13 +95,11 @@ namespace EndpointTests
       await Should_Add_Product();
       
       // Act
-      var result = await ParseResponse(await TestClient.SendAsync(GetRequest()));
+      var result = await ParseResponse(await TestClient.SendAsync(await GetRequest(Path)));
       var actual = JsonConvert.DeserializeObject<List<Product>>(result);
       
       // Assert
       Assert.True(actual.Count >= 2);
     }
-
-    
   }
 }

@@ -4,18 +4,18 @@ namespace Infrastructure
 {
   public abstract class RepositoryBase
   {
-    protected static DatabaseSettings _databaseSettings;
-
+    protected static DatabaseSettings DatabaseSettings;
+    
     protected RepositoryBase(DatabaseSettings settings)
     {
-      _databaseSettings = settings;
+      DatabaseSettings = settings;
     }
     
     protected static SqliteConnection Connection
     {
       get
       {
-        var connection = new SqliteConnection(_databaseSettings.ConnectionString);
+        var connection = new SqliteConnection(DatabaseSettings.ConnectionString);
         connection.Open();
         return connection;
       }
