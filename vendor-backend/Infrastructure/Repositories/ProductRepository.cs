@@ -1,16 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using Domain;
 using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure
+namespace Infrastructure.Repositories
 {
   public class ProductRepository : RepositoryBase, IProductRepository
   {
     public ProductRepository(DatabaseSettings settings) : base(settings)
     {
-      
     }
 
     public int AddProduct(IProduct product)
@@ -18,11 +17,11 @@ namespace Infrastructure
       var command = Connection.CreateCommand();
       command.CommandText =
         "INSERT INTO tProduct(Name, Quantity, Price, UnitID) VALUES(@Name, @Quantity, @Price, @UnitID); SELECT ID FROM tProduct WHERE rowid = (SELECT last_insert_rowid());";
-      command.Parameters.Add(new SqliteParameter("Name", SqliteType.Text) {Value = product.Name});
-      command.Parameters.Add(new SqliteParameter("Quantity", SqliteType.Integer) {Value = product.Quantity});
-      command.Parameters.Add(new SqliteParameter("Price", SqliteType.Real) {Value = product.Price});
-      command.Parameters.Add(new SqliteParameter("UnitID", SqliteType.Integer) {Value = product.UnitType});
-      return (int) (long)ExecuteScalarCommand(command);
+      command.Parameters.AddWithValue("Name", product.Name);
+      command.Parameters.AddWithValue("Quantity", product.Quantity);
+      command.Parameters.AddWithValue("Price", product.Price);
+      command.Parameters.AddWithValue("UnitID", product.UnitType);
+      return (int) (long) ExecuteScalarCommand(command);
     }
 
     public IProduct GetProduct(int id)
@@ -36,13 +35,7 @@ namespace Infrastructure
         Product product = null;
         using (var reader = ExecuteReaderCommand(command))
         {
-          product = new Product()
-          {
-            Name = reader["Name"].ToString(),
-            Price = decimal.Parse(reader["Price"].ToString()),
-            Quantity = int.Parse(reader["Quantity"].ToString()),
-            UnitType = (UnitType) byte.Parse(reader["UnitID"].ToString())
-          };
+          product = ParseProduct(reader);
         }
 
         return product;
@@ -61,7 +54,7 @@ namespace Infrastructure
 
     public IEnumerable<IProduct> GetProducts()
     {
-      using(var command = Connection.CreateCommand())
+      using (var command = Connection.CreateCommand())
       {
         command.CommandText = "SELECT * FROM tProduct";
 
@@ -70,19 +63,44 @@ namespace Infrastructure
         {
           while (reader.Read())
           {
-            var product = new Product()
-            {
-              Name = reader["Name"].ToString(),
-              Price = decimal.Parse(reader["Price"].ToString()),
-              Quantity = int.Parse(reader["Quantity"].ToString()),
-              UnitType = (UnitType) byte.Parse(reader["UnitID"].ToString())
-            };
-            list.Add(product);
+            list.Add(ParseProduct(reader));
           }
         }
 
         return list;
       }
+    }
+
+    public IPicture GetPicture(string name)
+    {
+      var path = $"Content/{DatabaseSettings.VendorName}/{name}";
+
+      if (File.Exists(path))
+      {
+        return new Picture() {Path = path, Extension = Path.GetExtension(name).Replace(".",string.Empty)};
+      }
+
+      return null;
+    }
+
+    private Product ParseProduct(IDataRecord reader)
+    {
+      var id = reader.GetInt32(reader.GetOrdinal("ID"));
+      var name = reader["Name"].ToString();
+      var price = reader.GetDecimal(reader.GetOrdinal("Price"));
+      var quantity = reader.GetInt32(reader.GetOrdinal("Quantity"));
+      var picture = reader["Picture"].ToString();
+      var unitType = ((UnitType) reader.GetByte(reader.GetOrdinal("UnitID"))).ToString();
+      var server = "http://localhost:5000";
+      return new Product()
+      {
+        Id = id,
+        Name = name,
+        Price = price,
+        Quantity = quantity,
+        Picture = Path.Combine(server, $"api/products/content?vendorname={DatabaseSettings.VendorName}&name={picture}"),
+        UnitType = unitType
+      };
     }
   }
 }

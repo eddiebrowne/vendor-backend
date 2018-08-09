@@ -5,6 +5,10 @@
     string Name { get; set; }
     int Quantity { get; set; }
     decimal Price { get; set; }
-    UnitType UnitType { get; set; }
+    string UnitType { get; set; }
+    int Count { get; set; }
+    int Order { get; set; }
+    string Picture { get; set; }
+    int Id { get; set; }
   }
 }

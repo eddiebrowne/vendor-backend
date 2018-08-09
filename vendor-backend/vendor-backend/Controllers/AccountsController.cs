@@ -40,5 +40,12 @@ namespace WebApplication.Controllers
 
       return Ok( new {token = _service.GenerateToken(account)});
     }
+    
+    [HttpGet]
+    [AllowAnonymous]
+    public JsonResult GetVendor([FromQuery] int vendorId)
+    {
+      return new JsonResult(_service.GetVendor(vendorId));
+    }
   }
 }

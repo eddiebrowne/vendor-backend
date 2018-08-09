@@ -1,6 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 
-namespace Infrastructure
+namespace Infrastructure.Repositories
 {
   public abstract class RepositoryBase
   {

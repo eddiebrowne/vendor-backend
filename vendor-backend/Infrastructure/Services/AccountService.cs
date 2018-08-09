@@ -1,12 +1,11 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Domain;
 using Domain.Services;
-using Infrastructure;
-using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Domain
+namespace Infrastructure.Services
 {
   public class AccountService : IAccountService
   {
@@ -47,6 +46,11 @@ namespace Domain
       _repository.StoreToken(account, guid);
       
       return token;
+    }
+
+    public IVendor GetVendor(int vendorId)
+    {
+      return _repository.GetVendor(vendorId);
     }
 
     private string CreateToken(string guid)

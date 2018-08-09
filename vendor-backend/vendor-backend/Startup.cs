@@ -7,10 +7,14 @@ using System.Text;
 using Domain;
 using Domain.Services;
 using Infrastructure;
+using Infrastructure.Repositories;
+using Infrastructure.Services;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Binder;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,8 +48,10 @@ namespace vendor_backend
       services.AddSingleton(_ => DatabaseSettings);
       services.AddTransient<IProductRepository, ProductRepository>();
       services.AddTransient<IAccountRepository, AccountRepository>();
+      services.AddTransient<IOrderRepository, OrderRepository>();
       services.AddTransient<IProductService, ProductService>();
       services.AddTransient<IAccountService, AccountService>();
+      services.AddTransient<IOrderService, OrderService>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -68,6 +74,11 @@ namespace vendor_backend
 
       app.UseAuthentication();
 
+      app.UseCors(c => 
+        c.AllowAnyOrigin()
+         .AllowAnyMethod()
+         .AllowAnyHeader());
+      
       app.Use((context, next) =>
       {
         if (context.Request.GetUri().AbsoluteUri.Contains("localhost"))
@@ -119,11 +130,27 @@ namespace vendor_backend
         {
           var format = config.GetSection("db:db-vendor:ConnectionString").Value;
           DatabaseSettings.ConnectionString = string.Format(format, vendor.Name);
+          DatabaseSettings.Admin = true;
         }
 
         return next();
       });
 
+      app.Use((context, next) =>
+      {
+        string vendor;
+        if (context.Request.Query.ContainsKey("vendor") &&
+            !string.IsNullOrEmpty(vendor = context.Request.Query["vendor"].ToString()))
+        {
+          var format = config.GetSection("db:db-vendor:ConnectionString").Value;
+          DatabaseSettings.VendorName = vendor;
+          DatabaseSettings.ConnectionString = string.Format(format, vendor);
+          DatabaseSettings.Admin = false;
+        }
+
+        return next();
+      });
+      
 
       app.UseMvc(); //.Run(async (context) => { await context.Response.WriteAsync("Hello World!"); });
     }

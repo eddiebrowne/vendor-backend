@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Infrastructure;
 using Newtonsoft.Json;
@@ -24,7 +26,7 @@ namespace EndpointTests
         Name = "test",
         Price = new decimal(10.50),
         Quantity = 3,
-        UnitType = UnitType.Each
+        UnitType = UnitType.Each.ToString()
       };
       
       // Act
@@ -46,7 +48,7 @@ namespace EndpointTests
         Name = "never",
         Price = new decimal(0.50),
         Quantity = 1,
-        UnitType = UnitType.Box
+        UnitType = UnitType.Box.ToString()
       };
       
       // Act
@@ -80,7 +82,7 @@ namespace EndpointTests
       await Should_Add_Product();
       
       // Act
-      var result = await ParseResponse(await TestClient.SendAsync(await GetRequest($"{Path}/1")));
+      var result = await ParseResponse(await TestClient.SendAsync(await GetRequest($"{Path}/admin/1")));
       var actual = JsonConvert.DeserializeObject<Product>(result);
       
       // Assert
@@ -88,14 +90,30 @@ namespace EndpointTests
     }
     
     [Fact]
-    public async void Should_Get_Product_List()
+    public async void Should_Get_Product_List_As_Admin()
     {
       // Arrange
       await Should_Add_Product();
       await Should_Add_Product();
       
       // Act
-      var result = await ParseResponse(await TestClient.SendAsync(await GetRequest(Path)));
+      var result = await ParseResponse(await TestClient.SendAsync(await GetRequest($"{Path}/admin")));
+      var actual = JsonConvert.DeserializeObject<List<Product>>(result);
+      
+      // Assert
+      Assert.True(actual.Count >= 2);
+    }
+    
+    [Fact]
+    public async void Should_Get_Product_List_As_Customer()
+    {
+      // Arrange
+      await Should_Add_Product();
+      await Should_Add_Product();
+      
+      // Act
+      var request = await GetRequest($"{Path}?vendor={VendorName}");
+      var result = await ParseResponse(await TestClient.SendAsync(request));
       var actual = JsonConvert.DeserializeObject<List<Product>>(result);
       
       // Assert

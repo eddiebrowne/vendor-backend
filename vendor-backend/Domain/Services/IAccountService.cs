@@ -1,4 +1,6 @@
-﻿namespace Domain.Services
+﻿using System.Collections.Generic;
+
+namespace Domain.Services
 {
   public interface IAccountService
   {
@@ -6,5 +8,6 @@
     IAccount GetVendorAccount(string email, string password);
     IAccount GetVendorFromToken(string token);
     string GenerateToken(IAccount account);
+    IVendor GetVendor(int vendorId);
   }
 }

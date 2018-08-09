@@ -1,4 +1,6 @@
-﻿namespace Domain
+﻿using Domain.Services;
+
+namespace Domain
 {
   public interface IAccountRepository
   {
@@ -7,5 +9,6 @@
     int Create(IAccount account);
     void CreateDatabase(string accountName);
     void StoreToken(IAccount account, string token);
+    IVendor GetVendor(int vendorId);
   }
 }

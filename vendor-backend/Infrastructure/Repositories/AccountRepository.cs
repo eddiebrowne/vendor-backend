@@ -4,12 +4,11 @@ using System.Data;
 using System.Data.SQLite;
 using System.IO;
 using System.Security.Cryptography;
-using System.Security.Policy;
 using System.Text;
 using Domain;
-using Microsoft.Data.Sqlite;
+using Domain.Services;
 
-namespace Infrastructure
+namespace Infrastructure.Repositories
 {
   public class AccountRepository : RepositoryBase, IAccountRepository
   {
@@ -106,6 +105,27 @@ namespace Infrastructure
         command.Parameters.AddWithValue("Email", account.Email);
         command.Parameters.AddWithValue("Token", token);
         ExecuteNonQueryCommand(command);
+      }
+    }
+
+    public IVendor GetVendor(int vendorId)
+    {
+      using (var command = Connection.CreateCommand())
+      {
+        command.CommandText = "SELECT Name, Email FROM tAccount WHERE Token = @Token";
+        command.Parameters.AddWithValue("Token", vendorId);
+
+        using (var reader = ExecuteReaderCommand(command))
+        {
+          var vendor = new Vendor();
+          vendor.Locations = new List<string>();
+          while (reader.Read())
+          {
+            vendor.Locations.Add(reader.GetString(reader.GetOrdinal("Location")));
+          }
+
+          return vendor;
+        }
       }
     }
 

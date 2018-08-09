@@ -25,6 +25,7 @@ CREATE TABLE tProduct
   ID INTEGER PRIMARY KEY AUTOINCREMENT,
   Name VARCHAR(50), 
   Quantity SMALLINT, 
-  Price DECIMAL(5,2), 
+  Price DECIMAL(5,2),
+  Picture TEXT,
   UnitID TINYINT REFERENCES tUnitType(ID)
 );

@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 using Domain;
+using Domain.Services;
 
-namespace Infrastructure
+namespace Infrastructure.Services
 {
   public class ProductService : IProductService
   {
@@ -30,6 +31,11 @@ namespace Infrastructure
     public IEnumerable<IProduct> GetProducts()
     {
       return _productRepository.GetProducts();
+    }
+
+    public IPicture GetPicture(string name)
+    {
+      return _productRepository.GetPicture(name);
     }
   }
 }

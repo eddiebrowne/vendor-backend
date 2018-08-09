@@ -8,5 +8,6 @@ namespace Domain
     IProduct GetProduct(int id);
     int RemoveProduct(int id);
     IEnumerable<IProduct> GetProducts();
+    IPicture GetPicture(string name);
   }
 }

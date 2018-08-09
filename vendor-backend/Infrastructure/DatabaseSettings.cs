@@ -3,7 +3,9 @@
   public class DatabaseSettings
   {
     public string ConnectionString { get; set; }
+    public string VendorName { get; set; }
     public Scripts Scripts { get; set; }
+    public bool Admin { get; set; }
   }
 
   public class Scripts

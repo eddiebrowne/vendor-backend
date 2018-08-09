@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Domain;
@@ -22,6 +23,8 @@ namespace EndpointTests
     private IAccount Account { get; set; }
 
     private Login _login;
+    protected string VendorName => $"test-{Stamp}";
+
     private Login Login
     {
       get
@@ -79,9 +82,9 @@ namespace EndpointTests
       return await response.Content.ReadAsStringAsync();
     }
 
-    protected async Task<HttpRequestMessage> GetRequest(string path = null)
+    protected async Task<HttpRequestMessage> GetRequest(string path = null, object data = null)
     {
-      return await Request(HttpMethod.Get, path);
+      return await Request(HttpMethod.Get, path, data);
     }
 
     protected async Task<HttpRequestMessage> PostRequest(object data, string path = null, bool secure = true)
@@ -121,7 +124,7 @@ namespace EndpointTests
       {
         Account = new Account
         {
-          Name = $"test-{Stamp}",
+          Name = VendorName,
           Email = Login.Email,
           Password = Login.Password
         };
