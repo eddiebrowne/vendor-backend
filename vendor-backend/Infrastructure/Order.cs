@@ -13,8 +13,8 @@ namespace Infrastructure
     [JsonProperty("customer")]
     public string Customer { get; set; }
 
-    [JsonProperty("location")]
-    public string Location { get; set; }
+    [JsonProperty("Market")]
+    public string Market { get; set; }
     
     [JsonProperty("time")]
     public DateTime PickupTime { get; set; }

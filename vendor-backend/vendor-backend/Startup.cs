@@ -87,6 +87,7 @@ namespace vendor_backend
           {
             DatabaseSettings = new DatabaseSettings();
             config.GetSection("db:test").Bind(DatabaseSettings);
+            DatabaseSettings.MainConnectionString = config.GetSection("db:test:ConnectionString").Value;
           }
 
           var testDb = $"{DatabaseSettings.ConnectionString.Split("=")[1]}";
@@ -150,7 +151,6 @@ namespace vendor_backend
 
         return next();
       });
-      
 
       app.UseMvc(); //.Run(async (context) => { await context.Response.WriteAsync("Hello World!"); });
     }

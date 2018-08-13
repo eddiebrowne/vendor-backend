@@ -25,7 +25,8 @@ namespace Infrastructure.Repositories
         var hash = GetHash(password, salt);
         using (var command = Connection.CreateCommand())
         {
-          command.CommandText = "SELECT [Name], [Email] FROM tAccount WHERE [Email] = @Email AND PasswordHash = @PasswordHash";
+          command.CommandText =
+            "SELECT [Name], [Email] FROM tAccount WHERE [Email] = @Email AND PasswordHash = @PasswordHash";
           command.Parameters.AddWithValue("Email", email);
           command.Parameters.AddWithValue("PasswordHash", hash);
 
@@ -110,23 +111,50 @@ namespace Infrastructure.Repositories
 
     public IVendor GetVendor(int vendorId)
     {
-      using (var command = Connection.CreateCommand())
+      var vendor = new Vendor();
+      using (var command = MainConnection.CreateCommand())
       {
-        command.CommandText = "SELECT Name, Email FROM tAccount WHERE Token = @Token";
-        command.Parameters.AddWithValue("Token", vendorId);
+        command.CommandText = "SELECT Name FROM tAccount WHERE ID = @ID";
+        command.Parameters.AddWithValue("ID", vendorId);
+        vendor.Name = command.ExecuteScalar()?.ToString();
+      }
 
-        using (var reader = ExecuteReaderCommand(command))
+      using (var command = MainConnection.CreateCommand())
+      {
+        command.CommandText =
+          @"SELECT
+              m.Name,
+              m.Address,
+              d.[Day],
+              m.StartTime,
+              m.EndTime
+            FROM
+              tMarket m
+            INNER JOIN tVendorMarket vm ON
+              vm.MarketID = m.ID
+            INNER JOIN tDay d ON
+              d.ID = m.DayOfWeek
+            WHERE
+              vm.AccountID = @ID";
+        command.Parameters.AddWithValue("ID", vendorId);
+
+        using (var reader = command.ExecuteReader())
         {
-          var vendor = new Vendor();
-          vendor.Locations = new List<string>();
+          vendor.Markets = new List<IMarket>();
           while (reader.Read())
           {
-            vendor.Locations.Add(reader.GetString(reader.GetOrdinal("Location")));
+            var market = new Market();
+            market.Name = reader.GetString(reader.GetOrdinal("Name"));
+            market.Address = reader.GetString(reader.GetOrdinal("Address"));
+            market.Day = reader.GetString(reader.GetOrdinal("Day"));
+            market.StartTime = reader.GetString(reader.GetOrdinal("StartTime"));
+            market.EndTime = reader.GetString(reader.GetOrdinal("EndTime"));
+            vendor.Markets.Add(market);
           }
-
-          return vendor;
         }
       }
+
+      return vendor;
     }
 
     private string GetHash(string password, string salt)

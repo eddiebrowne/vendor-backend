@@ -7,7 +7,7 @@ namespace Domain.Services
   {
     string VendorId { get; set; }
     string Customer { get; set; }
-    string Location { get; set; }
+    string Market { get; set; }
     DateTime PickupTime { get; set; }
     IList<IItem> Items { get; set; }
   }

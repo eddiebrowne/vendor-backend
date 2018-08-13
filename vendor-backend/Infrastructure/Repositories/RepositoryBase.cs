@@ -11,6 +11,17 @@ namespace Infrastructure.Repositories
       DatabaseSettings = settings;
     }
     
+    protected static SqliteConnection MainConnection
+    {
+      get
+      {
+        var connection = new SqliteConnection(DatabaseSettings.MainConnectionString);
+        connection.Open();
+        return connection;
+      }
+    }
+
+    
     protected static SqliteConnection Connection
     {
       get
